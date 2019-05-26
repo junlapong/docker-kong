@@ -5,7 +5,12 @@ volumes:
 
 networks:
   kong-net:
+
 services:
+
+  #######################################
+  # Kong database migration
+  #######################################
   kong-migrations:
     image: "${KONG_DOCKER_TAG:-kong:latest}"
     command: kong migrations bootstrap
@@ -14,15 +19,19 @@ services:
         condition: service_healthy
     environment:
       KONG_DATABASE: postgres
-      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
       KONG_PG_HOST: db
-      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-kong}
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
       KONG_PG_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-kong}
     links:
       - db:db
     networks:
       - kong-net
     restart: on-failure
+
+  #######################################
+  # Kong: The API Gateway
+  #######################################
   kong:
     image: "${KONG_DOCKER_TAG:-kong:latest}"
     user: "${KONG_USER:-root}"
@@ -32,8 +41,8 @@ services:
     environment:
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: '0.0.0.0:8001'
-      KONG_CASSANDRA_CONTACT_POINTS: db
+      KONG_ADMIN_LISTEN: '0.0.0.0:8001, 0.0.0.0:8444 ssl'
+      # KONG_CASSANDRA_CONTACT_POINTS: db
       KONG_DATABASE: postgres
       KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
       KONG_PG_HOST: db
@@ -49,12 +58,19 @@ services:
       # - "8443:8443/tcp"
       # - "8444:8444/tcp"
     restart: on-failure
+
+  #######################################
+  # Postgres: The database used by Kong
+  #######################################
   db:
     image: postgres:9.5
     environment:
       POSTGRES_DB: ${KONG_PG_DATABASE:-kong}
-      POSTGRES_PASSWORD: ${KONG_PG_PASSWORD:-kong}
       POSTGRES_USER: ${KONG_PG_USER:-kong}
+      POSTGRES_PASSWORD: ${KONG_PG_PASSWORD:-kong}
+    # CLOSE PORT AFTER TEST
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${KONG_PG_USER:-kong}"]
       interval: 30s
@@ -66,4 +82,40 @@ services:
     networks:
       - kong-net
     volumes:
-      - kong_data:/var/lib/postgresql/data
+      - ./kong_data:/var/lib/postgresql/data:rw
+
+  #######################################
+  # Konga database prepare
+  #######################################
+  konga-prepare:
+    image: pantsel/konga:next
+    command: "-c prepare -a postgres -u postgresql://kong@db:5432/konga_db"
+    networks:
+      - kong-net
+    restart: on-failure
+    links:
+      - db
+    depends_on:
+      - db
+
+  #######################################
+  # Konga: Kong GUI
+  # URL: https://hub.docker.com/r/pantsel/konga/
+  #######################################
+  konga:
+    image: pantsel/konga:next
+    restart: always
+    networks:
+        - kong-net
+    environment:
+      DB_ADAPTER: postgres
+      DB_HOST: db
+      DB_DATABASE: konga_db
+      DB_USER: ${KONG_PG_USER:-kong}
+      DB_PASSWORD: ${KONG_PG_PASSWORD:-kong}
+      TOKEN_SECRET: km1GUr4RkcQD7DewhJPNXrCuZwcKmqjb
+      NODE_ENV: production
+    depends_on:
+      - db
+    ports:
+      - "1337:1337"
