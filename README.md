@@ -35,7 +35,8 @@ pantsel/konga       0.13.0               9d7e3ce2b99e        7 months ago       
 
 ## References
  - [Kong in Docker Compose](https://github.com/Kong/docker-kong/tree/master/compose) 
- - [pantsel/docker-compose.yml](https://gist.github.com/pantsel/73d949774bd8e917bfd3d9745d71febf) and [mikkelkrogsholm/docker-compose.yml](https://gist.github.com/mikkelkrogsholm/d1188f1b416a891f56c54bb9a2016a55) *** OK ***
+ - [pantsel/docker-compose.yml](https://gist.github.com/pantsel/73d949774bd8e917bfd3d9745d71febf) and [mikkelkrogsholm/docker-compose.yml](https://gist.github.com/mikkelkrogsholm/d1188f1b416a891f56c54bb9a2016a55)
  - [Managing microservices and APIs with Kong and Konga](https://medium.com/@tselentispanagis/managing-microservices-and-apis-with-kong-and-konga-7d14568bb59d)
  - [ชีวิตดีเพราะมี Kong ช่วยทำ API Gateway](http://bit.ly/30HpYwM)
+ - *** [KONG API GATEWAY ฉบับรวบรัด](https://i.dont.works/kong-api-gateway-in-10-minute/)
  - [ข้อดีและข้อเสียของ API Gateway](http://www.somkiat.cc/api-gateway-with-microservice/)
